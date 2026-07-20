@@ -1,0 +1,47 @@
+name: CCASS 每日更新
+
+on:
+  schedule:
+    # 12:00 UTC = 20:00 香港时间,周一到周五
+    # 注: GitHub 的 cron 只认 UTC,不随夏令时变化(香港也无夏令时,所以固定对应 20:00 HKT)
+    - cron: "0 12 * * 1-5"
+  workflow_dispatch:        # 允许在网页上手动点一下就跑,方便测试
+
+# 防止上一次还没跑完就又触发
+concurrency:
+  group: ccass-daily
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Asia/Hong_Kong
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 抓取并推送到 Google Sheets
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          echo "香港时间: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          python run_all.py --end "$(date +%F)"
+
+      - name: 保存 xlsx 存档
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccass-xlsx-${{ github.run_id }}
+          path: CCASS_*.xlsx
+          retention-days: 90
+          if-no-files-found: warn

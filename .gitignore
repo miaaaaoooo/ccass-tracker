@@ -1,0 +1,14 @@
+# 凭证 —— 绝对不要提交
+google_credentials.json
+*.pem
+*.key
+
+# 虚拟环境(每台机器自己重建,见 requirements.txt)
+.venv/
+.venv_broken_backup/
+
+# 生成物
+CCASS_*.xlsx
+debug_response.html
+__pycache__/
+*.pyc
